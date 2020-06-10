@@ -12,7 +12,7 @@
   </metadata>
   <files>
     $CommonFileElements$
-    <file src="$OutputPath$**\$AssemblyName$.dll" target="lib\" />
+    <file src="$OutputPath$**\$AssemblyName$.dll" target="lib\" exclude="$OutputPath$**\ref\$AssemblyName$.dll" />
     <file src="$OutputPath$**\$AssemblyName$.pdb" target="lib\" />
     <file src="$OutputPath$**\$AssemblyName$.xml" target="lib\" />
     <file src="$PackageThirdPartyNoticesFile$" target=".\THIRD-PARTY-NOTICES.txt" />
