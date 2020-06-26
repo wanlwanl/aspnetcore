@@ -522,8 +522,6 @@ namespace Microsoft.AspNetCore.Components.E2ETest.Tests
             }
         }
 
-        
-
         private long BrowserScrollY
         {
             get => (long)((IJavaScriptExecutor)Browser).ExecuteScript("return window.scrollY");

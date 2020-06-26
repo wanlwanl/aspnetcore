@@ -587,7 +587,7 @@ namespace Microsoft.AspNetCore.Components.Test.Routing
             var routeTable = builder.Build();
 
             // Act
-            Assert.Equal(17, routeTable.Routes.Length);
+            Assert.Equal(17, routeTable.Routes.Count);
             for (var i = 0; i < 17; i++)
             {
                 var templateText = "r" + i.ToString().PadLeft(2, '0');
