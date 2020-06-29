@@ -3,40 +3,43 @@
 
 package com.microsoft.signalr.sample;
 
-import java.util.Scanner;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import com.microsoft.signalr.HubConnection;
 import com.microsoft.signalr.HubConnectionBuilder;
 
-
 public class Chat {
     public static void main(String[] args) {
-        System.out.println("Enter the URL of the SignalR Chat you want to join");
-        Scanner reader = new Scanner(System.in);  // Reading from System.in
-        String input = reader.nextLine();
+        while (true)
+        {
+            try {
+                ThreadPoolExecutor executor = new ThreadPoolExecutor(100, 200, 300,
+                        TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(3),
+                        new ThreadPoolExecutor.CallerRunsPolicy());
+                HubConnection hubConnection = HubConnectionBuilder.create("http://localhost:5000/default").build();
+                for(int i=0;i<20;i++) start(executor, hubConnection);
+                Thread.sleep(1000);
+                executor.shutdown();
+                Thread.sleep(1000);
+                hubConnection.stop().blockingAwait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-        HubConnection hubConnection = HubConnectionBuilder.create(input).build();
-
-        hubConnection.on("Send", (message) -> {
-            System.out.println(message);
-        }, String.class);
-
-        hubConnection.onClosed((ex) -> {
-            if (ex != null) {
-                System.out.printf("There was an error: %s", ex.getMessage());
+    public static void start(ThreadPoolExecutor executor, HubConnection hubConnection) {
+        executor.execute(() -> {
+            while (true) {
+                try {
+                    hubConnection.start();
+                    Thread.sleep((int) (Math.random() * 100));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
-
-        //This is a blocking call
-        hubConnection.start().blockingAwait();
-
-        String message = "";
-        while (!message.equals("leave")) {
-            // Scans the next token of the input as an int.
-            message = reader.nextLine();
-            hubConnection.send("Send", message);
-        }
-
-        hubConnection.stop().blockingAwait();
     }
 }
