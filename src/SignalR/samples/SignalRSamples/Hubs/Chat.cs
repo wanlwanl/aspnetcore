@@ -11,14 +11,16 @@ namespace SignalRSamples.Hubs
     {
         public override Task OnConnectedAsync()
         {
-            var name = Context.GetHttpContext().Request.Query["name"];
-            return Clients.All.SendAsync("Send", $"{name} joined the chat");
+            //var name = Context.GetHttpContext().Request.Query["name"];
+            //return Clients.All.SendAsync("Send", $"{name} joined the chat");
+            return Task.CompletedTask;
         }
 
         public override Task OnDisconnectedAsync(Exception exception)
         {
-            var name = Context.GetHttpContext().Request.Query["name"];
-            return Clients.All.SendAsync("Send", $"{name} left the chat");
+            //var name = Context.GetHttpContext().Request.Query["name"];
+            //return Clients.All.SendAsync("Send", $"{name} left the chat");
+            return Task.CompletedTask;
         }
 
         public Task Send(string name, string message)

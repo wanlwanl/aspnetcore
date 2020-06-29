@@ -36,7 +36,10 @@ public class HubConnection {
     private HubProtocol protocol;
     private Boolean handshakeReceived = false;
     private HubConnectionState hubConnectionState = HubConnectionState.DISCONNECTED;
+    private boolean isTransportOpen = false;
     private final Lock hubConnectionStateLock = new ReentrantLock();
+    private final Lock transportLock = new ReentrantLock();
+    private boolean fix = true;
     private List<OnClosedCallback> onClosedCallbackList;
     private final boolean skipNegotiate;
     private Single<String> accessTokenProvider;
@@ -65,7 +68,7 @@ public class HubConnection {
      *
      * @param serverTimeoutInMilliseconds The server timeout duration (specified in milliseconds).
      */
-    public void setServerTimeout(long serverTimeoutInMilliseconds) {
+    public void setServerTimeout(long serverTimeoutInMilliseconds)  {
         this.serverTimeout = serverTimeoutInMilliseconds;
     }
 
@@ -321,8 +324,15 @@ public class HubConnection {
      * @return A Completable that completes when the connection has been established.
      */
     public Completable start() {
-        if (hubConnectionState != HubConnectionState.DISCONNECTED) {
+        if (fix) transportLock.lock();
+        if (hubConnectionState != HubConnectionState.DISCONNECTED || fix && isTransportOpen) {
             return Completable.complete();
+        }
+
+        try {
+            if (fix) isTransportOpen = true;
+        } finally {
+            if (fix) transportLock.unlock();
         }
 
         handshakeResponseSubject = CompletableSubject.create();
@@ -361,6 +371,8 @@ public class HubConnection {
                     default:
                         transport = new WebSocketTransport(localHeaders, httpClient);
                 }
+            } else {
+                logger.error("transport exists.");
             }
 
             transport.setOnReceive(this.callback);
@@ -503,6 +515,7 @@ public class HubConnection {
     private void stopConnection(String errorMessage) {
         RuntimeException exception = null;
         hubConnectionStateLock.lock();
+        if (fix) transportLock.lock();
         try {
             // errorMessage gets passed in from the transport. An already existing stopError value
             // should take precedence.
@@ -531,8 +544,10 @@ public class HubConnection {
             transportEnum = TransportEnum.ALL;
             this.localHeaders.clear();
             this.streamMap.clear();
+            if (fix) isTransportOpen = false;
         } finally {
             hubConnectionStateLock.unlock();
+            if (fix) transportLock.unlock();
         }
 
         // Do not run these callbacks inside the hubConnectionStateLock
