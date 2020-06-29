@@ -12,9 +12,11 @@ import com.microsoft.signalr.HubConnectionBuilder;
 
 public class Chat {
     public static void main(String[] args) {
+        int cnt = 0;
         while (true)
         {
             try {
+                System.out.println(cnt++);
                 ThreadPoolExecutor executor = new ThreadPoolExecutor(100, 200, 300,
                         TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(3),
                         new ThreadPoolExecutor.CallerRunsPolicy());
@@ -23,7 +25,7 @@ public class Chat {
                 Thread.sleep(1000);
                 executor.shutdown();
                 Thread.sleep(1000);
-                hubConnection.stop().blockingAwait();
+                hubConnection.stop();//.blockingAwait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

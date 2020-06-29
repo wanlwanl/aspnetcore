@@ -39,6 +39,7 @@ public class HubConnection {
     private boolean isTransportOpen = false;
     private final Lock hubConnectionStateLock = new ReentrantLock();
     private final Lock transportLock = new ReentrantLock();
+    private boolean fix = true;
     private List<OnClosedCallback> onClosedCallbackList;
     private final boolean skipNegotiate;
     private Single<String> accessTokenProvider;
@@ -323,15 +324,15 @@ public class HubConnection {
      * @return A Completable that completes when the connection has been established.
      */
     public Completable start() {
-        transportLock.lock();
-        if (hubConnectionState != HubConnectionState.DISCONNECTED || isTransportOpen) {
+        if (fix) transportLock.lock();
+        if (hubConnectionState != HubConnectionState.DISCONNECTED || fix && isTransportOpen) {
             return Completable.complete();
         }
 
         try {
-            isTransportOpen = true;
+            if (fix) isTransportOpen = true;
         } finally {
-            transportLock.unlock();
+            if (fix) transportLock.unlock();
         }
 
         handshakeResponseSubject = CompletableSubject.create();
@@ -514,7 +515,7 @@ public class HubConnection {
     private void stopConnection(String errorMessage) {
         RuntimeException exception = null;
         hubConnectionStateLock.lock();
-        transportLock.lock();
+        if (fix) transportLock.lock();
         try {
             // errorMessage gets passed in from the transport. An already existing stopError value
             // should take precedence.
@@ -543,10 +544,10 @@ public class HubConnection {
             transportEnum = TransportEnum.ALL;
             this.localHeaders.clear();
             this.streamMap.clear();
-            isTransportOpen = false;
+            if (fix) isTransportOpen = false;
         } finally {
             hubConnectionStateLock.unlock();
-            transportLock.unlock();
+            if (fix) transportLock.unlock();
         }
 
         // Do not run these callbacks inside the hubConnectionStateLock
